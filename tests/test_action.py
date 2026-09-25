@@ -68,6 +68,15 @@ def test_composite_script_checks_and_syncs_a_consumer_without_vcs_metadata_in_ac
     assert "catalog/tool/.codex-plugin/plugin.json" in rejected.stderr
     assert git(consumer, "status", "--porcelain") == ""
 
+    # A new-branch push sends an all-zero base; check compares against the default branch instead.
+    git(consumer, "update-ref", "refs/remotes/origin/fixture", "HEAD~1")
+    zero_base = {**env, "VERSIONER_BASE": "0" * 40, "VERSIONER_DEFAULT_BRANCH": "fixture"}
+    rejected = subprocess.run(
+        ["bash", "-eo", "pipefail", "-c", script], env=zero_base, check=False, capture_output=True, text=True
+    )
+    assert rejected.returncode == 1, rejected.stdout + rejected.stderr
+    assert "catalog/tool/.codex-plugin/plugin.json" in rejected.stderr
+
     stage(consumer)
     env["VERSIONER_COMMAND"] = "sync"
     subprocess.run(["bash", "-eo", "pipefail", "-c", script], env=env, check=True, capture_output=True)

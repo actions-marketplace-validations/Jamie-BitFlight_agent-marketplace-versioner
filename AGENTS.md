@@ -1,43 +1,36 @@
 # AGENTS.md
 
-Universal working rules for repository tasks. Project-specific instructions override these where they conflict.
-
-## Before Editing
+## Before editing
 
 1. **Define success.** State the required outcome, acceptance criteria, preserved behavior, constraints, and non-goals.
-2. **Establish the boundary.** Identify owners, consumers, inputs, outputs, dependencies, interfaces, and affected environments.
-3. **Separate evidence from inference.** Current code, tests, file placement, wiring, counts, versions, and other observed state describe what exists; they do not prove intended ownership, durable design intent, or the correct change location.
-4. **Surface consequential uncertainty.** State assumptions and competing interpretations. Resolve uncertainty that could change scope, compatibility, ownership, or architecture before editing.
-5. **Choose the smallest viable change.** Prefer existing abstractions and established dependencies over new code. Compare viable approaches by evidence, blast radius, trade-offs, maintenance cost, and reversibility.
+2. **Map the boundary.** Identify owners, consumers, inputs, outputs, dependencies, interfaces, and affected environments.
+3. **Separate evidence from inference.** Observed state — code, tests, file placement, wiring, versions — shows what exists, not intended ownership or the correct change location.
+4. **Resolve consequential uncertainty.** State assumptions and competing interpretations. Resolve any that could change scope, compatibility, ownership, or architecture before editing.
+5. **Pick the smallest viable change.** Reuse existing abstractions and dependencies. Compare approaches by evidence, blast radius, maintenance cost, and reversibility.
 
-## Claims and Evidence
+## Claims
 
-The rules above govern changes. These govern statements — in a reply, an issue, a commit message, a code comment, or a brief handed to a subagent.
+These rules govern statements: replies, issues, commit messages, code comments, and subagent briefs.
 
-- **A claim about the world needs a command.** Do not state a fact about this codebase, another repository, a library, or a tool's behavior unless something run in the current session established it. Where no check was run, mark the claim unverified in the same sentence.
-- **A subagent's characterization is not evidence.** It is a claim with the same standing as your own. Check the artifact it describes before repeating it or building on it.
-- **Contradicting evidence stops the work.** An empty grep, a truncated capture, a result that disagrees with the plan already in flight — resolve it before continuing. These are the cheapest signals available and the easiest to walk past.
-- **An unverified claim that reaches an issue, a commit, or a comment becomes a premise.** Later readers cannot distinguish it from a checked fact and will cite it as one. Correcting the claim later does not retract the work built on it — revisit that too.
-- **A working tree is not the repository.** Read committed state — `git show <ref>:<path>` — before describing what a repository contains. A checkout can hold another session's uncommitted work, and reading it reports that work as the repo's own.
-- **Absence of a config is not absence of a tool, and presence is not use.** A disabled stanza reads as presence to grep while meaning the opposite; a tool can also be configured in a file that names it nowhere. Check where the tool is actually resolved from — the lockfile, the hook, the CI step.
+- **A claim needs a command.** State a fact about a codebase, library, or tool only when a check run in this session established it. Otherwise mark the claim _unverified_ in the same sentence.
+- **A subagent's report is a claim.** Check the artifact it describes before you repeat it or build on it.
+- **Contradicting evidence stops the work.** An empty grep, a truncated capture, or a result that disagrees with the plan in flight — resolve it before continuing.
+- **A published claim becomes a premise.** An _unverified_ claim in an issue, commit, or comment reads as fact to later readers. When you correct it, revisit the work built on it.
+- **Committed state is the repository.** Read `git show <ref>:<path>` before describing what a repository contains; a working tree can hold another session's uncommitted work.
+- **Resolution shows tool use, configuration does not.** Check where a tool actually resolves from — the lockfile, the hook, the CI step. A disabled stanza greps as present; a tool can be configured in a file that never names it.
 
-## While Editing
+## Editing
 
-- Change only what is required for the defined outcome.
-- Do not refactor, reformat, or clean unrelated code.
+- Keep every changed line inside the defined outcome; leave unrelated code as it is.
 - Match established repository conventions.
-- Remove only artifacts made obsolete by your change.
-- Do not add speculative flexibility, abstractions, fallbacks, or features.
+- Remove only artifacts your change made obsolete.
 - Reassess the plan when evidence contradicts an assumption.
+- Change dependencies only through `uv add` and `uv remove`.
+- Change Action inputs in `action.yml`. On `main`, `update-readme.yml` regenerates the README blocks between `<!-- start … -->` and `<!-- end … -->` markers from it.
 
 ## Verification
 
-- Validate each affected boundary independently.
-- Do not generalize success from one test, harness, environment, or consumer.
-- Prefer tests that demonstrate required behavior over implementation-detail tests.
-- Verify relevant regression, compatibility, static-analysis, and runtime checks.
-
-## Verifying a change
+The gate is these three commands. The hook set covers lint, formatting, type-check, workflow, Markdown, and shell; a subset is a different gate.
 
 ```sh
 uv run prek run --all-files
@@ -45,29 +38,19 @@ uv run pytest
 uv build
 ```
 
-The hook set is the lint, formatting, type-check, workflow, Markdown, and shell gate. Run it rather than presenting a subset of checks as equivalent.
+- Validate each affected _boundary_ independently; a pass in one test, harness, environment, or consumer proves only that one.
+- Test required behavior over implementation detail.
 
-## Changing dependencies
+## Before commit
 
-Use `uv add` or `uv remove`; do not hand-edit dependency version strings. Regenerate `uv.lock` with `uv lock`.
+Review the complete diff against this file.
 
-## Before Commit
+- Every changed line serves the defined outcome.
+- Every new constraint, threshold, default, prohibition, workflow step, fallback, abstraction, or policy is justified by the user requirement, repository evidence, an external contract, or measured behavior. Remove the rest, or label it a hypothesis.
+- Re-run the gate when the review changes behavior.
 
-Review the complete diff against this `AGENTS.md` before committing.
-
-- Confirm every changed line is required by the defined outcome and complies with the repository instructions above.
-- Identify every new constraint, threshold, default, prohibition, workflow step, fallback, abstraction, or policy introduced by the diff. Keep it only when its existence is justified by the user requirement, repository evidence, an applicable external contract, or measured behavior; otherwise remove or demote it to an explicitly labeled hypothesis or experiment parameter.
-- Remove unrelated cleanup, duplicated guidance, speculative flexibility, and implementation detail that does not earn its maintenance cost.
-- Re-run affected verification when the diff review changes behavior.
-
-Do not commit while a known unjustified constraint or instruction-compliance violation remains in the diff.
+Commit once the diff holds no unjustified constraint and no instruction violation.
 
 ## Completion
 
-Before declaring success, confirm:
-
-- acceptance criteria are demonstrated;
-- required checks pass;
-- no known affected boundary remains unverified;
-- no unnecessary changes remain in the diff;
-- remaining uncertainty, limitations, or follow-up work is stated explicitly.
+Declare success when the acceptance criteria are demonstrated, the gate passes, and every affected _boundary_ is verified. State remaining uncertainty, limitations, and follow-up work.

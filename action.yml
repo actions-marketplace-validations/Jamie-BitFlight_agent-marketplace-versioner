@@ -35,16 +35,23 @@ runs:
         VERSIONER_MARKETPLACE: ${{ inputs.marketplace }}
         VERSIONER_BASE: ${{ inputs.base-ref }}
         VERSIONER_HEAD: ${{ inputs.head-ref }}
+        VERSIONER_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         SETUPTOOLS_SCM_PRETEND_VERSION: 0+action
       run: |
+        # A new-branch push reports an all-zero `before` SHA; treat it as no base.
+        if [[ "$VERSIONER_BASE" =~ ^0+$ ]]; then
+          VERSIONER_BASE=""
+        fi
         args=("$VERSIONER_COMMAND")
         case "$VERSIONER_COMMAND" in
           check)
-            if [[ -z "$VERSIONER_BASE" ]]; then
-              echo "base-ref is required for check" >&2
-              exit 2
+            if [[ -z "$VERSIONER_BASE" && -n "$VERSIONER_DEFAULT_BRANCH" ]]; then
+              VERSIONER_BASE="origin/$VERSIONER_DEFAULT_BRANCH"
             fi
-            args+=(--base-ref "$VERSIONER_BASE" --head-ref "$VERSIONER_HEAD")
+            if [[ -n "$VERSIONER_BASE" ]]; then
+              args+=(--base-ref "$VERSIONER_BASE")
+            fi
+            args+=(--head-ref "$VERSIONER_HEAD")
             ;;
           sync)
             if [[ "$VERSIONER_MARKETPLACE" == "true" ]]; then

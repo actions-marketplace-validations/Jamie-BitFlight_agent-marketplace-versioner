@@ -161,7 +161,8 @@ def manifest_root(manifest: NativeManifest) -> Path:
     """
     if manifest.kind != "plugin":
         raise NativeManifestError(f"not a plugin manifest: {manifest.path}")
-    return manifest.path.parent if manifest.path.name.endswith(".plugin.json") else manifest.path.parent.parent
+    loose = manifest.path.name.endswith((".plugin.json", "-plugin.json"))
+    return manifest.path.parent if loose else manifest.path.parent.parent
 
 
 def manifests_for_source(manifests: list[NativeManifest], source_root: Path) -> list[NativeManifest]:

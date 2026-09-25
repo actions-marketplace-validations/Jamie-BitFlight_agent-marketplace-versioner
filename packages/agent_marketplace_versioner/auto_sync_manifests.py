@@ -383,7 +383,7 @@ def _native_file_changes(manifests: list[NativeManifest], status: _GitStatus) ->
             changes[source_root][operation].append(_native_component_path(source_root, filepath, operation))
     for source in status.get("relocated_manifests", {}).values():
         source_path = Path(source)
-        source_root = source_path.parent if source_path.name.endswith(".plugin.json") else source_path.parent.parent
+        source_root = _native_manifest_root(source_path)
         if manifests_for_source(manifests, source_root):
             deleted_change = _native_component_path(source_root, source_path, "deleted")
             if deleted_change not in changes[source_root]["deleted"]:

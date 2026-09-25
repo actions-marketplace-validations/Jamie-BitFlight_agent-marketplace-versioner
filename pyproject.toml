@@ -80,6 +80,20 @@ include = ["packages/agent_marketplace_versioner"]
 [tool.hatch.version]
 source = "vcs"
 
+# The release job moves the `v1` alias onto each `v1.x.y` commit; matching only `vX.Y.Z` tags keeps
+# the package version from reading `v1`.
+[tool.hatch.version.raw-options.scm.git]
+describe_command = [
+    "git",
+    "describe",
+    "--dirty",
+    "--tags",
+    "--long",
+    "--abbrev=40",
+    "--match",
+    "v[0-9]*.[0-9]*.[0-9]*",
+]
+
 [tool.git-cliff]
 config = "cliff.toml"
 

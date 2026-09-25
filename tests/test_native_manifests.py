@@ -94,6 +94,28 @@ def test_staged_content_change_bumps_all_native_manifests_at_an_arbitrary_root(
         assert json.loads((plugin_root / directory / "plugin.json").read_text(encoding="utf-8"))["version"] == "1.0.1"
 
 
+def test_staged_content_change_bumps_a_hyphenated_loose_manifest_with_its_harness_sibling(
+    tmp_path: Path, monkeypatch: Any
+) -> None:
+    _git(tmp_path, "init")
+    _git(tmp_path, "config", "user.email", "test@example.invalid")
+    _git(tmp_path, "config", "user.name", "Test")
+    plugin_root = tmp_path / "catalog" / "tool"
+    manifests = (".codex-plugin/plugin.json", "tool-plugin.json")
+    for manifest in manifests:
+        _write_json(plugin_root / manifest, {"name": "tool", "version": "1.0.0"})
+    (plugin_root / "README.md").write_text("before\n", encoding="utf-8")
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-m", "initial")
+    (plugin_root / "README.md").write_text("after\n", encoding="utf-8")
+    _git(tmp_path, "add", "catalog/tool/README.md")
+    monkeypatch.chdir(tmp_path)
+
+    assert sync_staged_manifests(tmp_path) == {Path("catalog/tool"): "1.0.1"}
+    for manifest in manifests:
+        assert json.loads((plugin_root / manifest).read_text(encoding="utf-8"))["version"] == "1.0.1"
+
+
 def test_staged_sync_does_not_absorb_unstaged_manifest_edits(tmp_path: Path, monkeypatch: Any) -> None:
     _git(tmp_path, "init")
     _git(tmp_path, "config", "user.email", "test@example.invalid")

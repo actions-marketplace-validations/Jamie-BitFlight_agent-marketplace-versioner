@@ -21,12 +21,9 @@ commit and publication.
 
 ## Git hook
 
-The pre-commit workflow is optional local-development support. Plugin version
-bumps act as cache busters so maintainers can refresh installed plugins within a
-session using their host's refresh or reinstall workflow; they do not automatically
-reload a running agent. Choose the local evaluation process that suits your project,
-including direct CLI use instead of installing a hook. No per-consumer adapter or
-versioner-specific configuration file is required.
+The pre-commit hook is optional local-development support. Plugin version bumps
+act as cache busters: maintainers refresh installed plugins with their host's
+refresh or reinstall workflow, because a running agent keeps the version it loaded.
 
 Add this to the consumer's `.pre-commit-config.yaml`:
 
@@ -64,14 +61,14 @@ pre-commit clean && pre-commit install --install-hooks
   with:
     fetch-depth: 0
 - uses: Jamie-BitFlight/agent-marketplace-versioner@v1
-  with:
-    base-ref: ${{ github.event.pull_request.base.sha }}
-    head-ref: ${{ github.event.pull_request.head.sha }}
 ```
 
 The default `command: check` reads the consumer repository at `repository`
-(the workflow workspace by default). Pass `command: sync`, `repair`, or `reconcile`
-only when local mutation is intended. Only `check` consumes `base-ref` and `head-ref`.
+(the workflow workspace by default). `base-ref` and `head-ref` default to the pull
+request's base and head, or to the pushed range on `push`. Without a base, as on a
+new-branch push or `workflow_dispatch`, `check` compares against the default branch.
+`sync` with `marketplace: true` also uses both refs when a base exists.
+Pass `command: sync`, `repair`, or `reconcile` only when local mutation is intended.
 The action does not commit or push. It supports Linux and macOS Bash runners.
 
 For post-merge catalog reconciliation, use `command: sync` with `marketplace: true`.
@@ -92,8 +89,7 @@ optional local cache-busting:
 ```
 
 It reconciles catalog entries and bumps existing marketplace versions, preserving
-versionless catalogs. Your publication workflow owns review, commit and push of the
-result; local plugin evaluation need not follow the same process.
+versionless catalogs. Add a commit-and-push step to publish the result.
 
 The `v1` tag advances only through compatible v1 releases. Pin an immutable
 commit SHA instead when your supply-chain policy requires it. The action installs
